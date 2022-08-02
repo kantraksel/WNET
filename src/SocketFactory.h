@@ -6,7 +6,6 @@ namespace WNET
 	{
 		static addrinfo CreateAddrInfo(const char* host, unsigned short port);
 		static void ReleaseAddrInfo(addrinfo& info);
-		static SOCKET CreateSocket(addrinfo& info);
-		static sockaddr_in GetRawPeerInfo(WNET::PeerInfo& peerInfo);
+		static SOCKET CreateSocket(const addrinfo& info);
 	};
 }

@@ -1,166 +1,101 @@
 #include "Socket.h"
 #include "SocketFactory.h"
-#include "ErrorCodes.h"
 
-#ifdef _WINDOWS
+#ifdef _WIN32
 	#pragma comment(lib, "Ws2_32.lib")
-	#define PARAMLENTYPE int
+	#define poll WSAPoll
 #else
 	#include <fcntl.h>
-	#define PARAMLENTYPE unsigned int
 #endif
 
 using namespace WNET;
 
-ISocket::ISocket()
+ISocket::~ISocket() {}
+
+Socket::Socket()
 {
-	isocket = INVALID_SOCKET;
+	socket = INVALID_SOCKET;
 
 	memset(&peerData, 0, sizeof(peerData));
-	memset(&errorInfo, 0, sizeof(errorInfo));
 	externalData = 0;
+	pollFD.events = POLLIN;
+	pollFD.fd = INVALID_SOCKET;
 }
 
-ISocket::~ISocket()
+Socket::~Socket()
 {
-	if (isocket != INVALID_SOCKET) closesocket(isocket);
+	if (socket != INVALID_SOCKET) closesocket(socket);
 }
 
-int ISocket::Send(const void* pBuffer, int bufferLenght)
+int Socket::Send(const void* pBuffer, int bufferLenght)
 {
-	errorInfo.section = ErrorSection::ISocketSend;
-	errorInfo.error = 0;
-	errorInfo.details = 0;
-
-	int returnValue = send(isocket, (const char*)pBuffer, bufferLenght, 0);
-	if (returnValue == SOCKET_ERROR) errorInfo.details = SocketLastError;
-	return returnValue;
+	return send(socket, (const char*)pBuffer, bufferLenght, 0);
 }
 
-int ISocket::Receive(void* pBuffer, int bufferLenght)
+int Socket::Receive(void* pBuffer, int bufferLenght)
 {
-	errorInfo.section = ErrorSection::ISocketReceive;
-	errorInfo.error = 0;
-	errorInfo.details = 0;
-
-	int returnValue = recv(isocket, (char*)pBuffer, bufferLenght, 0);
-	if (returnValue == SOCKET_ERROR) errorInfo.details = SocketLastError;
-	return returnValue;
+	return recv(socket, (char*)pBuffer, bufferLenght, 0);
 }
 
-unsigned int ISocket::CheckSocketLastError(int* pErrorCode)
+bool Socket::Poll(int timeout)
 {
-	errorInfo.section = ErrorSection::ISocketCheckSocketLastError;
-	errorInfo.error = 0;
-	errorInfo.details = 0;
-
-	PARAMLENTYPE error_code_size = sizeof(int);
-	error_code_size = getsockopt(isocket, SOL_SOCKET, SO_ERROR, (char*)pErrorCode, &error_code_size);
-	if (error_code_size == SOCKET_ERROR) errorInfo.details = SocketLastError;
-	
-	return error_code_size;
+	int result = poll(&pollFD, 1, timeout);
+	return result > 0;
 }
 
-int ISocket::GetMaxPacketSize(unsigned int* pMPS)
+bool Socket::GetSocketLastError(int* pErrorCode)
 {
-	errorInfo.section = ErrorSection::ISocketGetMaxPacketSize;
-	errorInfo.error = 0;
-	errorInfo.details = 0;
+	PARAMLENTYPE value = sizeof(int);
+	value = getsockopt(socket, SOL_SOCKET, SO_ERROR, (char*)pErrorCode, &value);
+	return value != SOCKET_ERROR;
+}
 
-#ifdef _WINDOWS
-	int error_code_size = sizeof(unsigned int);
-	error_code_size = getsockopt(isocket, SOL_SOCKET, SO_MAX_MSG_SIZE, (char*)pMPS, &error_code_size);
-	if (error_code_size == SOCKET_ERROR) errorInfo.details = SocketLastError;
-
-	return error_code_size;
+bool Socket::GetMessageMaxSize(unsigned int& size)
+{
+#ifdef _WIN32
+	int var = sizeof(unsigned int);
+	var = getsockopt(socket, SOL_SOCKET, SO_MAX_MSG_SIZE, (char*)&size, &var);
+	return var != SOCKET_ERROR;
 #else
-	return SOCKET_ERROR;
+	return false;
 #endif
 }
 
-int ISocket::SendTo(const void* pBuffer, int bufferLenght)
+int Socket::GetLastError()
 {
-	return SendTo(pBuffer, bufferLenght, peerData);
+	return Subsystem::GetLastError();
 }
 
-int ISocket::ReceiveFrom(void* pBuffer, int bufferLenght)
-{
-	return ReceiveFrom(pBuffer, bufferLenght, peerData);
-}
-
-int ISocket::SendTo(const void* pBuffer, int bufferLenght, PeerData& toPeer)
-{
-	errorInfo.section = ErrorSection::ISocketSendTo;
-	errorInfo.error = 0;
-	errorInfo.details = 0;
-
-	sockaddr_in peerAddr;
-	peerAddr.sin_family = AF_INET;
-	peerAddr.sin_addr.s_addr = toPeer.address;
-	peerAddr.sin_port = htons(toPeer.port);
-
-	int returnValue = sendto(isocket, (const char*)pBuffer, bufferLenght, 0, (sockaddr*)&peerAddr, sizeof(peerAddr));
-	if (returnValue == SOCKET_ERROR) errorInfo.details = SocketLastError;
-
-	return returnValue;
-}
-
-int ISocket::ReceiveFrom(void* pBuffer, int bufferLenght, PeerData& fromPeer)
-{
-	//TODO: SendTo and ReceivedFrom may be called async - errorInfo will be overwritten
-	errorInfo.section = ErrorSection::ISocketReceiveFrom;
-	errorInfo.error = 0;
-	errorInfo.details = 0;
-
-	sockaddr_in peerAddr;
-
-	PARAMLENTYPE returnValue = sizeof(sockaddr_in);
-	returnValue = recvfrom(isocket, (char*)pBuffer, bufferLenght, 0, (sockaddr*)&peerAddr, &returnValue);
-	if (returnValue == SOCKET_ERROR) errorInfo.details = SocketLastError;
-	else
-	{
-		fromPeer.address = peerAddr.sin_addr.s_addr;
-		fromPeer.port = ntohs(peerAddr.sin_port);
-	}
-
-	return returnValue;
-}
-
-PeerData& ISocket::GetPeerData()
+PeerData& Socket::GetPeerData()
 {
 	return peerData;
 }
 
-SOCKET ISocket::GetSocket()
+bool Socket::SetBlockingMode(bool value)
 {
-	return isocket;
-}
-
-ErrorInfo ISocket::GetLastError()
-{
-	return errorInfo;
-}
-
-bool ISocket::SetBlockingMode(bool isBlocking)
-{
-#ifdef _WINDOWS
-	u_long l = isBlocking ? 0 : 1;
-	return ioctlsocket(isocket, FIONBIO, &l) == 0;
+#ifdef _WIN32
+	u_long l = value ? 0 : 1;
+	return ioctlsocket(socket, FIONBIO, &l) == 0;
 #else
-	int flags = fcntl(isocket, F_GETFL);
-	if (isBlocking) flags &= ~O_NONBLOCK;
+	int flags = fcntl(socket, F_GETFL);
+	if (value) flags &= ~O_NONBLOCK;
 	else flags |= O_NONBLOCK;
-	fcntl(isocket, F_SETFL, flags);
+	fcntl(socket, F_SETFL, flags);
 	return true;
 #endif
 }
 
-void ISocket::SetExternalData(void* data)
+SOCKET Socket::GetSocket()
+{
+	return socket;
+}
+
+void Socket::SetExternalData(void* data)
 {
 	externalData = data;
 }
 
-void* ISocket::GetExternalData()
+void* Socket::GetExternalData()
 {
 	return externalData;
 }

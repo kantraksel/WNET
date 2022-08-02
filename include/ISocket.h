@@ -4,35 +4,27 @@ namespace WNET
 {
 	class ISocket
 	{
-		protected:
-			SOCKET isocket;
-			PeerData peerData;
-			ErrorInfo errorInfo;
-			void* externalData;
-
-			ISocket();
-
 		public:
 			virtual ~ISocket();
 
-			virtual int Send(const void* pBuffer, int bufferLenght);
-			virtual int Receive(void* pBuffer, int bufferLenght);
+			virtual bool CreateSocket() = 0;
+			virtual void CloseSocket() = 0;
+			virtual bool BindSocket(const char* host, unsigned short port) = 0;
+			virtual bool Connect(const char* host, unsigned short port) = 0;
 
-			virtual int SendTo(const void* pBuffer, int bufferLenght);
-			virtual int ReceiveFrom(void* pBuffer, int bufferLenght);
+			virtual int Send(const void* pBuffer, int bufferLenght) = 0;
+			virtual int Receive(void* pBuffer, int bufferLenght) = 0;
+			virtual bool Poll(int timeout) = 0;
 
-			virtual int SendTo(const void* pBuffer, int bufferLenght, PeerData& toPeer);
-			virtual int ReceiveFrom(void* pBuffer, int bufferLenght, PeerData& fromPeer);
+			virtual bool GetSocketLastError(int* pErrorCode) = 0;
+			virtual bool GetMessageMaxSize(unsigned int& size) = 0;
 
-			virtual unsigned int CheckSocketLastError(int* pErrorCode);
-			virtual int GetMaxPacketSize(unsigned int* pMPS);
+			virtual int GetLastError() = 0;
+			virtual PeerData& GetPeerData() = 0;
+			virtual bool SetBlockingMode(bool value) = 0;
+			virtual SOCKET GetSocket() = 0;
 
-			virtual PeerData& GetPeerData();
-			virtual SOCKET GetSocket();
-			virtual ErrorInfo GetLastError();
-			virtual bool SetBlockingMode(bool isBlocking);
-
-			virtual void SetExternalData(void* data);
-			virtual void* GetExternalData();
+			virtual void SetExternalData(void* data) = 0;
+			virtual void* GetExternalData() = 0;
 	};
 }

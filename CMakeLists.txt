@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(WNET VERSION 1.0)
+project(WNET)
 
 add_subdirectory(src)
 

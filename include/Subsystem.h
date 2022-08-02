@@ -6,10 +6,13 @@ namespace WNET
 	{
 		static bool Initialize();
 		static int Release();
+		static int GetLastError();
 
-		static DNSResponse* ResolveLocalIPs();
-		static DNSResponse* ResolveHostName(const char* host);
+		static DnsResponse ResolveLocalIPs();
+		static DnsResponse ResolveHostName(const char* host);
+		static void ReleaseDnsResponse(DnsResponse& data);
 
-		static void GetPeerInfo(PeerData& data, PeerInfo& info);
+		static void GetPeerInfo(const PeerData& data, PeerInfo& info);
+		static bool GetPeerData(const PeerInfo& info, PeerData& data);
 	};
 }

@@ -1,10 +1,8 @@
-#ifdef _WINDOWS
+#ifdef _WIN32
 	#include <Ws2tcpip.h>
 #else
 	#include <arpa/inet.h>
 	#include <netdb.h>
-
-	#define IN_ADDR in_addr
 #endif
 #include "wnet.h"
 #include "SocketFactory.h"
@@ -19,7 +17,7 @@ addrinfo SocketFactory::CreateAddrInfo(const char* host, unsigned short port)
 	info.ai_socktype = SOCK_DGRAM;
 	info.ai_protocol = IPPROTO_UDP;
 
-	IN_ADDR addr;
+	in_addr addr;
 	if (inet_pton(info.ai_family, host, &addr) == 1)
 	{
 		sockaddr_in* sin = new sockaddr_in;
@@ -42,19 +40,7 @@ void SocketFactory::ReleaseAddrInfo(addrinfo& info)
 	info.ai_addrlen = 0;
 }
 
-SOCKET SocketFactory::CreateSocket(addrinfo& info)
+SOCKET SocketFactory::CreateSocket(const addrinfo& info)
 {
 	return socket(info.ai_family, info.ai_socktype, info.ai_protocol);
-}
-
-sockaddr_in SocketFactory::GetRawPeerInfo(PeerInfo& peerInfo)
-{
-	sockaddr_in sockAddr;
-	sockAddr.sin_family = AF_INET;
-	sockAddr.sin_port = htons(peerInfo.port);
-
-	if (inet_pton(AF_INET, peerInfo.ipAddr, &sockAddr.sin_addr) == 0)
-		sockAddr.sin_family = AF_UNSPEC;
-
-	return sockAddr;
 }

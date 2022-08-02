@@ -1,4 +1,4 @@
-#ifdef _WINDOWS
+#ifdef _WIN32
 	#include <Ws2tcpip.h>
 	#include <iphlpapi.h>
 	#pragma comment(lib, "IPHLPAPI.lib")
@@ -6,15 +6,15 @@
 	#include <unistd.h>
 	#include <netdb.h>
 	#include <arpa/inet.h>
+	#include <cerrno>
 #endif
-
 #include "wnet.h"
 
 using namespace WNET;
 
 bool Subsystem::Initialize()
 {
-#ifdef _WINDOWS
+#ifdef _WIN32
 	WSAData wd;
 	return WSAStartup(MAKEWORD(2, 2), &wd) == NO_ERROR;
 #else
@@ -24,76 +24,118 @@ bool Subsystem::Initialize()
 
 int Subsystem::Release()
 {
-#ifdef _WINDOWS
+#ifdef _WIN32
 	return WSACleanup();
 #else
 	return 0;
 #endif
 }
 
-DNSResponse* Subsystem::ResolveLocalIPs()
+int Subsystem::GetLastError()
+{
+#ifdef _WIN32
+	return WSAGetLastError();
+#else
+	return errno;
+#endif
+}
+
+DnsResponse Subsystem::ResolveLocalIPs()
 {
 	char name[256];
 	if (gethostname(name, sizeof(name)) == 0)
 		return ResolveHostName(name);
 	
-	return nullptr;
+	return DnsResponse();
 }
 
-DNSResponse* Subsystem::ResolveHostName(const char* host)
+DnsResponse Subsystem::ResolveHostName(const char* host)
 {
-	addrinfo info;
-	addrinfo* retInfo = nullptr;
-	DNSResponse* retBuff = nullptr;
+	addrinfo hint;
+	memset(&hint, 0, sizeof(addrinfo));
+	hint.ai_flags = AI_CANONNAME;
+	hint.ai_family = AF_INET;
 
-	memset(&info, 0, sizeof(addrinfo));
-	info.ai_flags = AI_CANONNAME;
-	info.ai_family = AF_INET;
-
-	retBuff = (DNSResponse*)getaddrinfo(host, nullptr, &info, &retInfo);
-	if (retBuff) retBuff = nullptr;
+	addrinfo* info;
+	int nValue = getaddrinfo(host, nullptr, &hint, &info);
+	if (nValue) return DnsResponse();
 	else
 	{
-		retBuff = nullptr;
-		DNSResponse* currentBuff = nullptr;
+		int tableSize = 0;
+		for (addrinfo* ptr = info; ptr != nullptr; ptr = ptr->ai_next)
+			++tableSize;
 
-		for (addrinfo* ptr = retInfo; ptr != nullptr; ptr = ptr->ai_next)
+		Table<Table<char> > retTable;
+		if (tableSize > 0)
 		{
-			char buffer[16];
-			if (inet_ntop(ptr->ai_family, &((sockaddr_in*)(ptr->ai_addr))->sin_addr, buffer, sizeof(buffer)))
-			{
-				if (retBuff)
-				{
-					currentBuff->pNextEntry = new DNSResponse;
-					currentBuff->pNextEntry->pPreviousEntry = currentBuff;
-					currentBuff = currentBuff->pNextEntry;
-				}
-				else
-				{
-					retBuff = new DNSResponse;
-					currentBuff = retBuff;
-					currentBuff->pPreviousEntry = nullptr;
-				}
+			auto pTable = new Table<char>[tableSize];
+			
+			char* pBuff = nullptr;
+			const int buffSize = 16;
 
-				currentBuff->pNextEntry = nullptr;
-				currentBuff->pIpAddr.size = sizeof(buffer);
-				currentBuff->pIpAddr.data = new char[currentBuff->pIpAddr.size];
-				memcpy(currentBuff->pIpAddr.data, buffer, sizeof(buffer));
+			int i = 0;
+			for (addrinfo* ptr = info; ptr != nullptr; ptr = ptr->ai_next)
+			{
+				if (!pBuff) pBuff = new char[buffSize];
+				if (inet_ntop(ptr->ai_family, &((sockaddr_in*)(ptr->ai_addr))->sin_addr, pBuff, buffSize))
+				{
+					auto& entry = pTable[i];
+					entry.data = pBuff;
+					entry.size = buffSize;
+
+					pBuff = nullptr;
+					++i;
+				}
+			}
+
+			if (i == 0)
+			{
+				delete[] pTable;
+				delete[] pBuff;
+			}
+			else
+			{
+				retTable.data = pTable;
+				retTable.size = i;
 			}
 		}
-		freeaddrinfo(retInfo);
+		freeaddrinfo(info);
+		
+		return retTable;
 	}
-
-	return retBuff;
 }
 
-void Subsystem::GetPeerInfo(PeerData& data, PeerInfo& info)
+void Subsystem::ReleaseDnsResponse(DnsResponse& data)
 {
-	char buff[16];
-	memset(buff, 0, sizeof(buff));
-	inet_ntop(AF_INET, &data.address, buff, sizeof(buff));
+	for (int i = 0; i < data.size; ++i)
+	{
+		data.data[i].Release();
+	}
+	data.Release();
+	data.data = nullptr;
+	data.size = 0;
+}
 
-	memcpy(info.ipAddr, buff, sizeof(buff));
-	info.ipAddrSize = strlen(info.ipAddr);
-	info.port = ntohs(data.port);
+void Subsystem::GetPeerInfo(const PeerData& data, PeerInfo& info)
+{
+	char* buff = info.addr;
+	const int buffSize = sizeof(info.addr);
+
+	memset(buff, 0, buffSize);
+	inet_ntop(AF_INET, &data.address, buff, buffSize);
+
+	info.port = data.port;
+}
+
+bool Subsystem::GetPeerData(const PeerInfo& info, PeerData& data)
+{
+	if (inet_pton(AF_INET, info.addr, &data.address) == 1)
+	{
+		data.port = info.port;
+		return true;
+	}
+	
+	data.address = 0;
+	data.port = 0;
+	return false;
 }

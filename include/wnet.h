@@ -3,38 +3,46 @@
 
 #include <cstring>
 
-#ifdef _WINDOWS
+#ifdef _WIN32
 	#include <winerror.h>
 
 	#ifndef _WINSOCK2API_
 		#ifndef _WINSOCKAPI_
-			#pragma message("WinSock2.h not imported, using own definition of SOCKET")
 			typedef size_t SOCKET;
-			#define SOCKET_ERROR (~0)
 		#endif
 	#endif
 #else
 	typedef int SOCKET;
-	#define SOCKET_ERROR -1
 #endif
 
 namespace WNET
 {
-	struct CharTable
+	template <typename T>
+	struct Table
 	{
-		char* data;
+		T* data;
 		int size;
 
-		~CharTable()
+		Table() : data(0), size(0)
+		{}
+
+		inline void Release()
 		{
-			delete data;
+			delete[] data;
 		}
+	};
+
+	typedef Table<Table<char> > DnsResponse;
+
+	struct PeerData
+	{
+		unsigned int address;
+		unsigned short port;
 	};
 
 	struct PeerInfo
 	{
-		char ipAddr[16];
-		int ipAddrSize;
+		char addr[16];
 		unsigned short port;
 
 		PeerInfo()
@@ -42,26 +50,11 @@ namespace WNET
 			memset(this, 0, sizeof(PeerInfo));
 		}
 	};
-
-	struct DNSResponse
-	{
-		CharTable pIpAddr;
-
-		DNSResponse* pPreviousEntry;
-		DNSResponse* pNextEntry;
-	};
-
-	struct PeerData
-	{
-		unsigned int address;
-		unsigned short port;
-	};
 }
 
 #include "Subsystem.h"
-#include "ErrorCodes.h"
 #include "ISocket.h"
-#include "IHostSocket.h"
-#include "IClientSocket.h"
+#include "IUDPSocket.h"
+#include "PollFD.h"
 
 #endif

@@ -107,8 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;WNETFLAPI_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>
-      </LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -131,8 +130,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>
-      </LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -157,8 +155,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>
-      </LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -185,8 +182,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>
-      </LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -204,21 +200,19 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\ErrorCodes.h" />
-    <ClInclude Include="..\src\HostSocket.h" />
-    <ClInclude Include="..\src\ClientSocket.h" />
-    <ClInclude Include="..\include\IClientSocket.h" />
-    <ClInclude Include="..\include\IHostSocket.h" />
     <ClInclude Include="..\include\ISocket.h" />
+    <ClInclude Include="..\include\IUDPSocket.h" />
+    <ClInclude Include="..\include\PollFD.h" />
     <ClInclude Include="..\include\Subsystem.h" />
     <ClInclude Include="..\include\wnet.h" />
     <ClInclude Include="..\src\Socket.h" />
     <ClInclude Include="..\src\SocketFactory.h" />
+    <ClInclude Include="..\src\UDPSocket.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\Client.cpp" />
+    <ClCompile Include="..\src\PollFD.cpp" />
+    <ClCompile Include="..\src\UDPSocket.cpp" />
     <ClCompile Include="..\src\Socket.cpp" />
-    <ClCompile Include="..\src\Server.cpp" />
     <ClCompile Include="..\src\SocketFactory.cpp" />
     <ClCompile Include="..\src\Subsystem.cpp" />
   </ItemGroup>
