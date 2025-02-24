@@ -1,7 +1,5 @@
-#ifdef _WIN32
-	#define poll WSAPoll
-#endif
-#include "Socket.h"
+#include "Platform.h"
+#include "wnet.h"
 
 using namespace WNET;
 static_assert(sizeof(PollFD) == sizeof(pollfd), "Poll structs do not match!");
@@ -20,5 +18,9 @@ bool PollFD::isSignaled()
 
 int PollFD::Poll(PollFD* pFDs, int count, int timeout)
 {
+#ifdef _WIN32
+	return WSAPoll((pollfd*)pFDs, count, timeout);
+#else
 	return poll((pollfd*)pFDs, count, timeout);
+#endif
 }

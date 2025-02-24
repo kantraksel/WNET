@@ -5,42 +5,16 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Headers\include">
-      <UniqueIdentifier>{4427f996-531b-44cb-b493-5fc62988e2b7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="Headers\wnet">
+      <UniqueIdentifier>{878b9c20-72d5-4cd8-8164-56f9e509bd3f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\wnet.h">
-      <Filter>Headers\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\ISocket.h">
-      <Filter>Headers\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\Socket.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\Subsystem.h">
-      <Filter>Headers\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\SocketFactory.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\UDPSocket.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\IUDPSocket.h">
-      <Filter>Headers\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\PollFD.h">
-      <Filter>Headers\include</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\src\UDPSocket.cpp">
+    <ClCompile Include="..\src\UdpSocket.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Subsystem.cpp">
@@ -49,11 +23,34 @@
     <ClCompile Include="..\src\Socket.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\SocketFactory.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\PollFD.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\TcpSocket.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\Platform.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\wnet.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\wnet\PollFD.h">
+      <Filter>Headers\wnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\wnet\Socket.h">
+      <Filter>Headers\wnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\wnet\Subsystem.h">
+      <Filter>Headers\wnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\wnet\TcpSocket.h">
+      <Filter>Headers\wnet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\wnet\UdpSocket.h">
+      <Filter>Headers\wnet</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

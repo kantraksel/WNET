@@ -1,13 +1,4 @@
-#ifdef _WIN32
-	#include <Ws2tcpip.h>
-	#include <iphlpapi.h>
-	#pragma comment(lib, "IPHLPAPI.lib")
-#else
-	#include <unistd.h>
-	#include <netdb.h>
-	#include <arpa/inet.h>
-	#include <cerrno>
-#endif
+#include "Platform.h"
 #include "wnet.h"
 
 using namespace WNET;
@@ -22,12 +13,12 @@ bool Subsystem::Initialize()
 #endif
 }
 
-int Subsystem::Release()
+bool Subsystem::Release()
 {
 #ifdef _WIN32
-	return WSACleanup();
+	return WSACleanup() == 0;
 #else
-	return 0;
+	return true;
 #endif
 }
 
@@ -46,96 +37,54 @@ DnsResponse Subsystem::ResolveLocalIPs()
 	if (gethostname(name, sizeof(name)) == 0)
 		return ResolveHostName(name);
 	
-	return DnsResponse();
+	return {};
 }
 
 DnsResponse Subsystem::ResolveHostName(const char* host)
 {
-	addrinfo hint;
-	memset(&hint, 0, sizeof(addrinfo));
-	hint.ai_flags = AI_CANONNAME;
-	hint.ai_family = AF_INET;
+	DnsResponse response;
 
 	addrinfo* info;
-	int nValue = getaddrinfo(host, nullptr, &hint, &info);
-	if (nValue) return DnsResponse();
-	else
+	addrinfo hint{};
+	hint.ai_flags = AI_CANONNAME;
+	hint.ai_family = AF_INET;
+	if (getaddrinfo(host, nullptr, &hint, &info) == 0)
 	{
-		int tableSize = 0;
+		Endpoint ep{};
 		for (addrinfo* ptr = info; ptr != nullptr; ptr = ptr->ai_next)
-			++tableSize;
-
-		Table<Table<char> > retTable;
-		if (tableSize > 0)
 		{
-			auto pTable = new Table<char>[tableSize];
-			
-			char* pBuff = nullptr;
-			const int buffSize = 16;
-
-			int i = 0;
-			for (addrinfo* ptr = info; ptr != nullptr; ptr = ptr->ai_next)
-			{
-				if (!pBuff) pBuff = new char[buffSize];
-				if (inet_ntop(ptr->ai_family, &((sockaddr_in*)(ptr->ai_addr))->sin_addr, pBuff, buffSize))
-				{
-					auto& entry = pTable[i];
-					entry.data = pBuff;
-					entry.size = buffSize;
-
-					pBuff = nullptr;
-					++i;
-				}
-			}
-
-			if (i == 0)
-			{
-				delete[] pTable;
-				delete[] pBuff;
-			}
-			else
-			{
-				retTable.data = pTable;
-				retTable.size = i;
-			}
+			ep.address = ((sockaddr_in*)(ptr->ai_addr))->sin_addr.s_addr;
+			response.push_back(ep.ToAddress());
 		}
 		freeaddrinfo(info);
-		
-		return retTable;
 	}
+	return response;
 }
 
-void Subsystem::ReleaseDnsResponse(DnsResponse& data)
+Address Endpoint::ToAddress() const
 {
-	for (int i = 0; i < data.size; ++i)
+	Address addr;
+
+	inet_ntop(AF_INET, &address, addr.address, sizeof(addr.address));
+	addr.port = ntohs(port);
+	return addr;
+}
+
+bool Address::ToEndpoint(Endpoint& ep) const
+{
+	AddressPtr ptr{ address, port };
+	return ptr.ToEndpoint(ep);
+}
+
+bool AddressPtr::ToEndpoint(Endpoint& ep) const
+{
+	if (inet_pton(AF_INET, address, &ep.address) == 1)
 	{
-		data.data[i].Release();
-	}
-	data.Release();
-	data.data = nullptr;
-	data.size = 0;
-}
-
-void Subsystem::GetPeerInfo(const PeerData& data, PeerInfo& info)
-{
-	char* buff = info.addr;
-	const int buffSize = sizeof(info.addr);
-
-	memset(buff, 0, buffSize);
-	inet_ntop(AF_INET, &data.address, buff, buffSize);
-
-	info.port = data.port;
-}
-
-bool Subsystem::GetPeerData(const PeerInfo& info, PeerData& data)
-{
-	if (inet_pton(AF_INET, info.addr, &data.address) == 1)
-	{
-		data.port = info.port;
+		ep.port = htons(port);
 		return true;
 	}
-	
-	data.address = 0;
-	data.port = 0;
+
+	ep.address = 0;
+	ep.port = 0;
 	return false;
 }

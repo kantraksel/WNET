@@ -1,60 +1,59 @@
+#pragma once
 #ifndef _WNET_INCLUDE
 #define _WNET_INCLUDE
 
 #include <cstring>
+#include <vector>
 
 #ifdef _WIN32
-	#include <winerror.h>
-
 	#ifndef _WINSOCK2API_
 		#ifndef _WINSOCKAPI_
 			typedef size_t SOCKET;
 		#endif
 	#endif
+	#pragma comment(lib, "Ws2_32.lib")
 #else
 	typedef int SOCKET;
 #endif
 
 namespace WNET
 {
-	template <typename T>
-	struct Table
-	{
-		T* data;
-		int size;
-
-		Table() : data(0), size(0)
-		{}
-
-		inline void Release()
-		{
-			delete[] data;
-		}
-	};
-
-	typedef Table<Table<char> > DnsResponse;
-
-	struct PeerData
+	struct Address;
+	typedef std::vector<Address> DnsResponse;
+	
+	struct Endpoint
 	{
 		unsigned int address;
 		unsigned short port;
+
+		Address ToAddress() const;
 	};
 
-	struct PeerInfo
+	struct Address
 	{
-		char addr[16];
+		char address[16];
 		unsigned short port;
 
-		PeerInfo()
+		Address() : address{}, port(0)
 		{
-			memset(this, 0, sizeof(PeerInfo));
 		}
+
+		bool ToEndpoint(Endpoint& ep) const;
+	};
+
+	struct AddressPtr
+	{
+		const char* address;
+		unsigned short port;
+
+		bool ToEndpoint(Endpoint& ep) const;
 	};
 }
 
-#include "Subsystem.h"
-#include "ISocket.h"
-#include "IUDPSocket.h"
-#include "PollFD.h"
+#include "wnet/Subsystem.h"
+#include "wnet/Socket.h"
+#include "wnet/UdpSocket.h"
+#include "wnet/TcpSocket.h"
+#include "wnet/PollFD.h"
 
 #endif
