@@ -33,7 +33,7 @@ bool TcpSocket::TryAccept(TcpSocket& connection)
 		return false;
 
 	if (connection.socket != INVALID_SOCKET)
-		closesocket(socket);
+		closesocket(connection.socket);
 
 	connection.socket = conn;
 	connection.peer = Endpoint
