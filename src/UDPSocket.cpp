@@ -57,12 +57,18 @@ bool UdpSocket::SetBroadcastFlag(bool enabled)
 	return setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (char*)&flag, sizeof(flag)) != SOCKET_ERROR;
 }
 
-bool UdpSocket::GetMessageMaxSize(unsigned int& size)
+int UdpSocket::GetMessageMaxSize()
 {
-#ifdef _WIN32
+	int size;
 	socklen_t var = sizeof(size);
-	return getsockopt(socket, SOL_SOCKET, SO_MAX_MSG_SIZE, (char*)&size, &var) != SOCKET_ERROR;
-#else
-	return false;
-#endif
+	if (getsockopt(socket, IPPROTO_IP, IP_MTU, (char*)&size, &var) != SOCKET_ERROR)
+		return size;
+	else
+		return -1;
+}
+
+bool UdpSocket::SetFragmentationFlag(bool enabled)
+{
+	int value = IP_PMTUDISC_DO;
+	return setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, (char*)&value, sizeof(value)) != SOCKET_ERROR;
 }
