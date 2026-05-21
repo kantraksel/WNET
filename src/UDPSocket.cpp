@@ -59,10 +59,13 @@ bool UdpSocket::SetBroadcastFlag(bool enabled)
 
 int UdpSocket::GetMessageMaxSize()
 {
+	// IPv4 header - 20 bytes
+	// UDP header - 8 bytes
+
 	int size;
 	socklen_t var = sizeof(size);
 	if (getsockopt(socket, IPPROTO_IP, IP_MTU, (char*)&size, &var) != SOCKET_ERROR)
-		return size;
+		return size - 28;
 	else
 		return -1;
 }
