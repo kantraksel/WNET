@@ -31,6 +31,15 @@ int Subsystem::GetLastError()
 #endif
 }
 
+void Subsystem::SetLastError(int value)
+{
+	#ifdef _WIN32
+		WSASetLastError(value);
+	#else
+		errno = value;
+	#endif
+}
+
 DnsResponse Subsystem::ResolveLocalIPs()
 {
 	char name[256];
