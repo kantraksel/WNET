@@ -116,6 +116,11 @@ int Socket::GetLastError()
 	return Subsystem::GetLastError();
 }
 
+void Socket::SetLastError(int value)
+{
+	Subsystem::SetLastError(value);
+}
+
 Endpoint& Socket::GetPeer()
 {
 	return peer;

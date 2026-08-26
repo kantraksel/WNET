@@ -29,6 +29,7 @@ namespace WNET
 
 			bool GetSocketLastError(int& errorCode);
 			int GetLastError();
+			void SetLastError(int value);
 			Endpoint& GetPeer();
 			Address GetPeerAddress();
 			bool SetBlockingMode(bool value);

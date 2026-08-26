@@ -16,6 +16,7 @@ namespace WNET
 			int ReceiveFrom(void* pBuffer, int bufferLenght, Endpoint& fromPeer);
 
 			bool SetBroadcastFlag(bool enabled);
-			bool GetMessageMaxSize(unsigned int& size);
+			int GetMessageMaxSize();
+			bool SetFragmentationFlag(bool enabled);
 	};
 }
